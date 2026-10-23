@@ -45,7 +45,8 @@ The daemon does not poll the volume; it reacts to those pushes. If the socket dr
 ## The hidden output mode
 
 `setSoundOutput` normally accepts `tv_speaker`, `external_optical`, `external_arc`,
-`external_speaker`, `soundbar`, `headphone` and `lineout`. The value
+`bt_soundbar`, `wisa_speaker`, `headphone`, `lineout`, `tv_external_speaker`,
+`tv_speaker_headphone`, `lgSoundSync` and `mobile_phone`. The value
 `tv_speaker_optical_arc` is not in that list — it engages the internal speakers and the
 eARC/optical output at the same time. It exists in the audio daemon
 (`/usr/sbin/audiod`) but has no user interface.

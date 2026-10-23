@@ -39,7 +39,7 @@ Cast `SET_VOLUME` message on port 8009. A watchdog re-applies the audio mode wit
 ## Quick start
 
 ```bash
-git clone <this-repo> webos-orchestra
+git clone https://github.com/andreisava92-boop/webos-orchestra.git webos-orchestra
 cd webos-orchestra
 ./install.sh
 ```
