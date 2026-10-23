@@ -229,6 +229,14 @@ test('loadConfig rejects an empty desiredOutput', function () {
   assert.throws(function () { orchestra.loadConfig(file); }, /desiredOutput/);
 });
 
+test('loadConfig rejects shell characters in desiredOutput', function () {
+  var file = tmpFile('config.json', JSON.stringify({
+    castHost: '192.0.2.60', castPort: 8009, gain: 2.6,
+    desiredOutput: "tv_speaker'; id", watchdogSeconds: 15
+  }));
+  assert.throws(function () { orchestra.loadConfig(file); }, /desiredOutput/);
+});
+
 test('loadConfig rejects invalid JSON', function () {
   var file = tmpFile('config.json', '{not json');
   assert.throws(function () { orchestra.loadConfig(file); }, /JSON/);

@@ -78,6 +78,10 @@ function loadConfig(path) {
   if (typeof parsed.desiredOutput !== 'string' || parsed.desiredOutput.trim() === '') {
     throw new Error('config.desiredOutput must be a non-empty string');
   }
+  var desired = parsed.desiredOutput.trim();
+  if (!/^[A-Za-z0-9_]+$/.test(desired)) {
+    throw new Error('config.desiredOutput may contain only letters, digits and underscores');
+  }
   var watchdog = parsed.watchdogSeconds;
   if (typeof watchdog !== 'number' || !isFinite(watchdog) || watchdog < 5) {
     throw new Error('config.watchdogSeconds must be a number >= 5');
@@ -86,7 +90,7 @@ function loadConfig(path) {
     castHost: parsed.castHost.trim(),
     castPort: port,
     gain: gain,
-    desiredOutput: parsed.desiredOutput.trim(),
+    desiredOutput: desired,
     watchdogSeconds: watchdog
   };
 }

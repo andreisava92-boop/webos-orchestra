@@ -1,5 +1,10 @@
 secrets/
 config.json
+.env
+.env.*
+*.key
+*.pem
+registration.json
 .venv/
 __pycache__/
 *.pyc

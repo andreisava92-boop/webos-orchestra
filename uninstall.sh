@@ -106,6 +106,7 @@ if [ -f "$LOCAL_CONFIG" ]; then
 fi
 
 SSH_USER="${SSH_USER:-root}"
+[[ "$SSH_USER" =~ ^[A-Za-z0-9._-]+$ ]] || die "invalid SSH user: '$SSH_USER'"
 
 if [ -z "$TV_IP" ]; then
   if [ -t 0 ]; then

@@ -11,6 +11,7 @@ Exits non-zero on bad input.
 
 import json
 import math
+import re
 import sys
 
 USAGE = (
@@ -56,6 +57,13 @@ def require_text(name, raw):
     return value
 
 
+def require_identifier(name, raw):
+    value = require_text(name, raw)
+    if not re.match(r"^[A-Za-z0-9_]+$", value):
+        raise ValueError("%s may contain only letters, digits and underscores" % name)
+    return value
+
+
 def main(argv):
     if len(argv) != 6:
         sys.stderr.write(USAGE)
@@ -68,7 +76,7 @@ def main(argv):
             "castHost": require_text("castHost", cast_host),
             "castPort": parse_port(cast_port),
             "gain": parse_gain(gain),
-            "desiredOutput": require_text("desiredOutput", desired_output),
+            "desiredOutput": require_identifier("desiredOutput", desired_output),
             "watchdogSeconds": parse_watchdog(watchdog),
         }
     except ValueError as exc:

@@ -23,7 +23,7 @@ from typing import NoReturn
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 VENV_DIR = REPO_ROOT / ".venv"
-PACKAGE_SPEC = "lgtvremote-cli>=1.6.4,<2"
+PACKAGE_SPEC = "lgtvremote-cli==1.6.4"
 DEVICES_FILE = Path.home() / ".config" / "lgtvremote" / "devices.json"
 DEFAULT_TV_NAME = "webos-orchestra"
 IPV4_RE = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")

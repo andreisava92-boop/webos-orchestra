@@ -26,6 +26,17 @@ Reads tvHost and sshUser from config.json when the flags are omitted.
 EOF
 }
 
+is_ipv4() {
+  local ip="$1"
+  [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || return 1
+  local octet
+  local IFS='.'
+  for octet in $ip; do
+    [ "$((10#$octet))" -le 255 ] || return 1
+  done
+  return 0
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --tv-ip)
@@ -56,6 +67,7 @@ if [ -f "$LOCAL_CONFIG" ]; then
 fi
 
 SSH_USER="${SSH_USER:-root}"
+[[ "$SSH_USER" =~ ^[A-Za-z0-9._-]+$ ]] || die "invalid SSH user: '$SSH_USER'"
 
 if [ -z "$TV_IP" ]; then
   if [ -t 0 ]; then
@@ -65,6 +77,7 @@ if [ -z "$TV_IP" ]; then
     die "the TV address is required (--tv-ip or config.json)"
   fi
 fi
+is_ipv4 "$TV_IP" || die "invalid TV address: '$TV_IP'"
 
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new)
 

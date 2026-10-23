@@ -34,6 +34,8 @@ launching applications and reading device information.
   running with full privileges on the TV.
 - The daemon listens on **no** TCP port. It only opens outbound connections: a WebSocket
   to `127.0.0.1:3000` (loopback) and a TLS connection to the Cast device on the LAN.
+- `desiredOutput` is restricted to letters, digits and underscores because it is passed
+  to `luna-send` through a shell. The installer and the daemon both reject other values.
 - The Cast connection uses TLS with `rejectUnauthorized: false`, because Cast devices
   present self-signed certificates. The connection is outbound and limited to the
   configured `castHost`/`castPort`; no other host is contacted.

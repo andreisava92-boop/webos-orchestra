@@ -117,6 +117,7 @@ if [ -f "$LOCAL_CONFIG" ]; then
 fi
 
 SSH_USER="${SSH_USER:-root}"
+[[ "$SSH_USER" =~ ^[A-Za-z0-9._-]+$ ]] || die "invalid SSH user: '$SSH_USER'"
 GAIN="${GAIN:-2.6}"
 CAST_PORT="${CAST_PORT:-8009}"
 DESIRED_OUTPUT="${DESIRED_OUTPUT:-tv_speaker_optical_arc}"
@@ -231,6 +232,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
 else
   mkdir -p "$SECRETS_DIR"
   chmod 700 "$SECRETS_DIR"
+  chmod 600 "$SECRETS_DIR/client.key" "$SECRETS_DIR/registration.json" 2>/dev/null || true
   python3 scripts/write_tv_config.py "$SECRETS_DIR/tv-config.json" \
     "$CAST_IP" "$CAST_PORT" "$GAIN" "$DESIRED_OUTPUT" "$WATCHDOG"
 fi
@@ -299,6 +301,7 @@ with open(out, "w", encoding="utf-8") as handle:
     json.dump(data, handle, indent=2)
     handle.write("\n")
 PY
+chmod 600 "$LOCAL_CONFIG"
 
 # ---- 8. Next steps --------------------------------------------------------
 cat <<EOF
