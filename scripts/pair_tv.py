@@ -133,7 +133,7 @@ def load_devices():
 
 
 def find_client_key(data, tv_ip):
-    """devices[<ip>]["client_key"], else the first client_key found anywhere."""
+    """devices[<ip>]["client_key"]; never fall back to another TV's key."""
     if isinstance(data, dict):
         devices = data.get("devices")
         if isinstance(devices, dict):
@@ -143,24 +143,6 @@ def find_client_key(data, tv_ip):
                     value = entry.get(name)
                     if isinstance(value, str) and value.strip():
                         return value.strip()
-    return find_client_key_anywhere(data)
-
-
-def find_client_key_anywhere(node):
-    if isinstance(node, dict):
-        for name in ("client_key", "clientKey"):
-            value = node.get(name)
-            if isinstance(value, str) and value.strip():
-                return value.strip()
-        for value in node.values():
-            found = find_client_key_anywhere(value)
-            if found:
-                return found
-    elif isinstance(node, list):
-        for item in node:
-            found = find_client_key_anywhere(item)
-            if found:
-                return found
     return None
 
 
