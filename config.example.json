@@ -1,0 +1,9 @@
+{
+  "tvHost": "192.0.2.10",
+  "sshUser": "root",
+  "castHost": "192.0.2.60",
+  "castPort": 8009,
+  "gain": 2.6,
+  "desiredOutput": "tv_speaker_optical_arc",
+  "watchdogSeconds": 15
+}

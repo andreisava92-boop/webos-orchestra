@@ -1,0 +1,10 @@
+{
+  "name": "webos-orchestra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dual audio and volume sync for rooted LG webOS TVs",
+  "scripts": {
+    "test": "node tests/run_tests.js"
+  },
+  "license": "MIT"
+}
