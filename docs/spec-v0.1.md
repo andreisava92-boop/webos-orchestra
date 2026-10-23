@@ -138,10 +138,10 @@ Documentation-only example, no real addresses. Use TEST-NET addresses (`192.0.2.
 ### `scripts/pair_tv.py`
 
 - Usage: `python3 scripts/pair_tv.py --tv-ip <ip> --out-dir <dir> [--tv-name <name>]`.
-- Create `./.venv` in the repo if missing (`python3 -m venv .venv`), install `lgtvremote-cli>=1.6.4,<2` into it.
+- Create `./.venv` in the repo if missing (`python3 -m venv .venv`), install `lgtvremote-cli==1.6.4` into it.
 - Add the TV if needed: `.venv/bin/lgtv add <ip> --name <name> --no-enrich` (ignore "already exists").
 - Pair non-destructively: `.venv/bin/lgtv --tv <ip> pair`, inheriting stdin/stdout so the user can type the PIN shown on the TV.
-- Read `~/.config/lgtvremote/devices.json`; find `devices[<ip>]["client_key"]` (fallback: recursive search for the first `client_key`). If missing, print clear instructions and exit 1.
+- Read `~/.config/lgtvremote/devices.json`; find `devices[<ip>]["client_key"]`. If missing, print clear instructions and exit 1. Never fall back to another TV's key.
 - Extract `REGISTRATION_PAYLOAD` from the installed package:
   `.venv/bin/python -c "import json,lgtvremote_cli as l; print(json.dumps(l.REGISTRATION_PAYLOAD))"`.
 - Write `<out-dir>/client.key` and `<out-dir>/registration.json`, both mode `0600`; directory mode `0700`.
