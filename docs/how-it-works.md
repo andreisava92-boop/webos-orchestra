@@ -96,6 +96,14 @@ parameter: it is easy to reason about and to tune by ear.
 `computeTarget()` and `applyGain()` are exported so the mapping is unit-tested without a
 TV.
 
+### Fixed soundbar volume
+
+If even a high `gain` leaves the TV speakers louder, set `"fixedCastVolume": 100` in
+`config.json`. The daemon then sends that level whenever the TV is unmuted and above 0;
+mute and TV volume 0 still map to 0. The installer does not write this field, so edit
+`/var/lib/webosbrew/orchestra/config.json` directly and restart the daemon. A reinstall
+rewrites that file, so re-add the field if needed.
+
 ## Watchdog
 
 Every `watchdogSeconds` (default 15) the daemon calls

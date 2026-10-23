@@ -160,6 +160,16 @@ test('computeTarget(NaN, false, 2.6) === 0', function () {
   assert.strictEqual(orchestra.computeTarget(NaN, false, 2.6), 0);
 });
 
+test('computeTarget uses a fixed cast volume when configured', function () {
+  assert.strictEqual(orchestra.computeTarget(18, false, 5.6, 100), 100);
+  assert.strictEqual(orchestra.computeTarget(10, false, 5.6, 100), 100);
+});
+
+test('fixed cast volume respects mute and TV volume 0', function () {
+  assert.strictEqual(orchestra.computeTarget(18, true, 5.6, 100), 0);
+  assert.strictEqual(orchestra.computeTarget(0, false, 5.6, 100), 0);
+});
+
 test('applyGain(15, 2.6) === 39', function () {
   assert.strictEqual(orchestra.applyGain(15, 2.6), 39);
 });
@@ -178,8 +188,27 @@ test('loadConfig returns normalized values', function () {
   assert.strictEqual(cfg.castHost, '192.0.2.60');
   assert.strictEqual(cfg.castPort, 8009);
   assert.strictEqual(cfg.gain, 2.6);
+  assert.strictEqual(cfg.fixedCastVolume, null);
   assert.strictEqual(cfg.desiredOutput, 'tv_speaker_optical_arc');
   assert.strictEqual(cfg.watchdogSeconds, 15);
+});
+
+test('loadConfig accepts a fixed cast volume', function () {
+  var file = tmpFile('config.json', JSON.stringify({
+    castHost: '192.0.2.60', castPort: 8009, gain: 2.6,
+    fixedCastVolume: 100,
+    desiredOutput: 'tv_speaker_optical_arc', watchdogSeconds: 15
+  }));
+  assert.strictEqual(orchestra.loadConfig(file).fixedCastVolume, 100);
+});
+
+test('loadConfig rejects a fixed cast volume above 100', function () {
+  var file = tmpFile('config.json', JSON.stringify({
+    castHost: '192.0.2.60', castPort: 8009, gain: 2.6,
+    fixedCastVolume: 101,
+    desiredOutput: 'tv_speaker_optical_arc', watchdogSeconds: 15
+  }));
+  assert.throws(function () { orchestra.loadConfig(file); }, /fixedCastVolume/);
 });
 
 test('loadConfig throws when the file is missing', function () {

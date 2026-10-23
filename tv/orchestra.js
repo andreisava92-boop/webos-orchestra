@@ -75,6 +75,15 @@ function loadConfig(path) {
   if (typeof gain !== 'number' || !isFinite(gain) || gain <= 0) {
     throw new Error('config.gain must be a number greater than 0');
   }
+  var fixed = parsed.fixedCastVolume;
+  if (fixed !== undefined && fixed !== null) {
+    if (typeof fixed !== 'number' || !isFinite(fixed) || fixed < 0 || fixed > 100) {
+      throw new Error('config.fixedCastVolume must be null or a number between 0 and 100');
+    }
+    fixed = Math.round(fixed);
+  } else {
+    fixed = null;
+  }
   if (typeof parsed.desiredOutput !== 'string' || parsed.desiredOutput.trim() === '') {
     throw new Error('config.desiredOutput must be a non-empty string');
   }
@@ -90,6 +99,7 @@ function loadConfig(path) {
     castHost: parsed.castHost.trim(),
     castPort: port,
     gain: gain,
+    fixedCastVolume: fixed,
     desiredOutput: desired,
     watchdogSeconds: watchdog
   };
@@ -105,8 +115,11 @@ function applyGain(volume, gain) {
   return Math.min(100, Math.round(v * g));
 }
 
-function computeTarget(volume, muted, gain) {
+function computeTarget(volume, muted, gain, fixedCastVolume) {
   if (muted) return 0;
+  if (typeof fixedCastVolume === 'number') {
+    return volume > 0 ? Math.max(0, Math.min(100, Math.round(fixedCastVolume))) : 0;
+  }
   return applyGain(volume, gain);
 }
 
@@ -359,7 +372,7 @@ function handleVolume(vs) {
   var vol = Number(vs.volume);
   var muted = !!vs.muteStatus;
   if (isNaN(vol)) return;
-  var target = computeTarget(vol, muted, config.gain);
+  var target = computeTarget(vol, muted, config.gain, config.fixedCastVolume);
   if (target === lastTarget) return;
   lastTarget = target;
   log('TV ' + vol + '% -> cast ' + target + '%' + (muted ? ' (muted)' : ''));
@@ -452,6 +465,7 @@ function start() {
 
   log('starting: cast=' + config.castHost + ':' + config.castPort +
     ' gain=' + config.gain +
+    ' fixed=' + (config.fixedCastVolume === null ? 'off' : config.fixedCastVolume + '%') +
     ' output=' + config.desiredOutput +
     ' watchdog=' + config.watchdogSeconds + 's' +
     (dryRun ? ' (dry run)' : ''));

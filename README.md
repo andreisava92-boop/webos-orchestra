@@ -100,6 +100,7 @@ The TV-side file is `/var/lib/webosbrew/orchestra/config.json`:
 | `castHost`        | string | IPv4 address of the Cast receiver (the soundbar).              |
 | `castPort`        | number | Cast port, `8009` unless you changed it.                       |
 | `gain`            | number | Multiplier applied to the TV volume before sending it.         |
+| `fixedCastVolume` | number or null | Pin the soundbar at this level instead of using `gain`. |
 | `desiredOutput`   | string | Output mode to enforce, normally `tv_speaker_optical_arc`.     |
 | `watchdogSeconds` | number | How often the output mode is checked, minimum `5`.             |
 
@@ -115,6 +116,11 @@ speakers, adjust `gain` and restart the daemon:
 ```bash
 ssh root@192.0.2.10 'sh /var/lib/webosbrew/init.d/98-orchestra-daemon'
 ```
+
+If the TV is still louder than the soundbar at every useful `gain`, set
+`"fixedCastVolume": 100` in the TV-side `config.json` and restart the daemon. The daemon
+then sends that level whenever the TV volume is above 0; mute and volume 0 still send 0.
+This field is not written by the installer, so add it again after a reinstall.
 
 ## Finding the soundbar IP
 
