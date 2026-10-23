@@ -101,7 +101,7 @@ the mode. What matters is the next line, `re-applied: {...}`.
 - Editing `config.json` on the TV is not enough; restart the daemon:
 
   ```bash
-  ssh root@192.0.2.10 'sh /var/lib/webosbrew/init.d/98-orchestra-daemon.sh'
+  ssh root@192.0.2.10 'sh /var/lib/webosbrew/init.d/98-orchestra-daemon'
   ```
 
 - Check the mapping without a TV by running the tests:
@@ -118,13 +118,14 @@ The log shows repeated `cast error` lines.
 
 ## The daemon is not running after a reboot
 
-- The boot scripts must be in `/var/lib/webosbrew/init.d/` and executable (`755`).
+- The boot scripts must be in `/var/lib/webosbrew/init.d/`, executable (`755`), and
+  named **without** a `.sh` extension: `run-parts` ignores dotted filenames.
 - The Homebrew Channel must be set to run `init.d` at boot.
 - `/tmp` is cleared on reboot; that is expected, `/tmp/orchestra-tv.pid` is recreated.
 - Start it by hand and read the log:
 
   ```bash
-  ssh root@192.0.2.10 'sh /var/lib/webosbrew/init.d/98-orchestra-daemon.sh; sleep 2; tail -20 /tmp/orchestra-tv.log'
+  ssh root@192.0.2.10 'sh /var/lib/webosbrew/init.d/98-orchestra-daemon; sleep 2; tail -20 /tmp/orchestra-tv.log'
   ```
 
 ## Config errors at startup
@@ -155,7 +156,7 @@ which is the quickest way to validate a config:
 If SSH is gone but the daemon still runs, disable it on the TV directly:
 
 ```sh
-rm -f /var/lib/webosbrew/init.d/98-orchestra-daemon.sh /var/lib/webosbrew/init.d/99-orchestra.sh
+rm -f /var/lib/webosbrew/init.d/98-orchestra-daemon /var/lib/webosbrew/init.d/99-orchestra
 kill "$(cat /tmp/orchestra-tv.pid)"
 script -qc "luna-send -a webosbrew -f -n 1 -w 3000 luna://com.webos.service.audio/setSoundOutput '{\"soundOutput\":\"tv_speaker\"}'" /dev/null
 ```

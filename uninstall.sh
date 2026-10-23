@@ -128,7 +128,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
   echo "Dry run: nothing was sent to the TV. Commands that would run:"
   echo "+ ssh ${SSH_USER}@${TV_IP} 'echo ok'"
   echo "+ ssh ${SSH_USER}@${TV_IP} 'kill \$(cat /tmp/orchestra-tv.pid); pkill -f orchestra.js'"
-  echo "+ ssh ${SSH_USER}@${TV_IP} 'rm -f $INITD/98-orchestra-daemon.sh $INITD/99-orchestra.sh'"
+  echo "+ ssh ${SSH_USER}@${TV_IP} 'rm -f $INITD/98-orchestra-daemon $INITD/99-orchestra $INITD/98-orchestra-daemon.sh $INITD/99-orchestra.sh'"
   if [ "$RESTORE_MODE" != "none" ]; then
     echo "+ ssh ${SSH_USER}@${TV_IP} 'setSoundOutput $RESTORE_MODE; getSoundOutput'"
   fi
@@ -165,7 +165,7 @@ echo "daemon stopped"
 echo "Daemon stopped."
 
 # ---- 2. Remove the boot scripts -------------------------------------------
-ssh_run "rm -f $INITD/98-orchestra-daemon.sh $INITD/99-orchestra.sh"
+ssh_run "rm -f $INITD/98-orchestra-daemon $INITD/99-orchestra $INITD/98-orchestra-daemon.sh $INITD/99-orchestra.sh"
 echo "Removed the init scripts from $INITD."
 
 # ---- 3. Restore the sound output ------------------------------------------

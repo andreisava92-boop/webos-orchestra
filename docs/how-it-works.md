@@ -127,13 +127,14 @@ way to break this project: everything looks fine and nothing is ever written.
 ## Boot scripts
 
 Two scripts are installed in `/var/lib/webosbrew/init.d/`, which the Homebrew Channel
-runs at boot:
+runs at boot. Their filenames have **no `.sh` extension on purpose**: `run-parts` ignores
+names containing a dot, so `99-orchestra.sh` would never run.
 
-- `98-orchestra-daemon.sh` kills a previously recorded PID, waits a second, refuses to
+- `98-orchestra-daemon` kills a previously recorded PID, waits a second, refuses to
   start when `orchestra.js` or `config.json` is missing, then starts
   `nohup /usr/bin/node "$BASE/orchestra.js" >> /tmp/orchestra-tv.log 2>&1 &` and records
   the PID in `/tmp/orchestra-tv.pid`.
-- `99-orchestra.sh` polls `getSoundOutput` until the audio service answers (15 attempts,
+- `99-orchestra` polls `getSoundOutput` until the audio service answers (15 attempts,
   2 seconds apart), waits another 5 seconds, then applies
   `tv_speaker_optical_arc` once. Ordering matters: at boot the audio service is not ready
   when `init.d` starts, and a `setSoundOutput` that arrives too early is dropped.

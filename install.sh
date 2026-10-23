@@ -240,14 +240,14 @@ remote_install() {
   ssh_run "mkdir -p $BASE"
   scp_run tv/orchestra.js "$SECRETS_DIR/tv-config.json" "$SECRETS_DIR/client.key" \
     "$SECRETS_DIR/registration.json" "$SSH_USER@$TV_IP:$BASE/"
-  scp_run tv/init.d/98-orchestra-daemon.sh tv/init.d/99-orchestra.sh \
+  scp_run tv/init.d/98-orchestra-daemon tv/init.d/99-orchestra \
     "$SSH_USER@$TV_IP:$INITD/"
-  ssh_run "chmod 755 $INITD/98-orchestra-daemon.sh $INITD/99-orchestra.sh && chmod 600 $BASE/client.key $BASE/registration.json && chmod 644 $BASE/orchestra.js $BASE/tv-config.json && mv -f $BASE/tv-config.json $BASE/config.json && chmod 644 $BASE/config.json && ls -l $BASE"
+  ssh_run "rm -f $INITD/98-orchestra-daemon.sh $INITD/99-orchestra.sh && chmod 755 $INITD/98-orchestra-daemon $INITD/99-orchestra && chmod 600 $BASE/client.key $BASE/registration.json && chmod 644 $BASE/orchestra.js $BASE/tv-config.json && mv -f $BASE/tv-config.json $BASE/config.json && chmod 644 $BASE/config.json && ls -l $BASE"
 }
 
 remote_start() {
-  ssh_run "sh $INITD/98-orchestra-daemon.sh"
-  ssh_run "sh $INITD/99-orchestra.sh"
+  ssh_run "sh $INITD/98-orchestra-daemon"
+  ssh_run "sh $INITD/99-orchestra"
 }
 
 if [ "$DRY_RUN" -eq 1 ]; then

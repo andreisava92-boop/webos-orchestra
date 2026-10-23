@@ -40,8 +40,8 @@ webos-orchestra/
 ├── tv/
 │   ├── orchestra.js
 │   └── init.d/
-│       ├── 98-orchestra-daemon.sh
-│       └── 99-orchestra.sh
+│       ├── 98-orchestra-daemon
+│       └── 99-orchestra
 ├── scripts/
 │   ├── pair_tv.py
 │   ├── read_config.py
@@ -149,7 +149,7 @@ Documentation-only example, no real addresses. Use TEST-NET addresses (`192.0.2.
 - If `client.key` and `registration.json` already exist in `<out-dir>` and are non-empty, reuse them unless `--force` is passed.
 - Do not modify `~/.config/lgtvremote/devices.json`.
 
-### `tv/init.d/98-orchestra-daemon.sh`
+### `tv/init.d/98-orchestra-daemon`
 
 - POSIX sh, `PATH=/usr/bin:/bin:/usr/sbin:/sbin`.
 - `BASE=/var/lib/webosbrew/orchestra`, `PIDFILE=/tmp/orchestra-tv.pid`, `LOG=/tmp/orchestra-tv.log`.
@@ -158,7 +158,7 @@ Documentation-only example, no real addresses. Use TEST-NET addresses (`192.0.2.
 - Do not start if `orchestra.js` or `config.json` is missing; print an error to the log and exit 1.
 - chmod 755.
 
-### `tv/init.d/99-orchestra.sh`
+### `tv/init.d/99-orchestra`
 
 - POSIX sh, set PATH.
 - Wait for Luna audio readiness by polling `script -qc "luna-send -a webosbrew -n 1 -f luna://com.webos.service.audio/getSoundOutput '{}'" /dev/null` up to 15 times, 2 s apart.
@@ -202,9 +202,9 @@ Behavior:
 10. Remote install:
     - `ssh ... 'mkdir -p /var/lib/webosbrew/orchestra'`
     - `scp tv/orchestra.js`, `secrets/tv-config.json`, `secrets/client.key`, `secrets/registration.json` into `BASE`.
-    - `scp tv/init.d/98-orchestra-daemon.sh tv/init.d/99-orchestra.sh` into `/var/lib/webosbrew/init.d/`.
+    - `scp tv/init.d/98-orchestra-daemon tv/init.d/99-orchestra` into `/var/lib/webosbrew/init.d/`.
     - remote `chmod 755` on init scripts, `chmod 600` on key/registration, `chmod 644` on code/config; move `tv-config.json` to `config.json`.
-11. Start: `ssh ... 'sh /var/lib/webosbrew/init.d/98-orchestra-daemon.sh'`.
+11. Start: `ssh ... 'sh /var/lib/webosbrew/init.d/98-orchestra-daemon'`.
 12. Wait 3 s, then `ssh ... 'cat /tmp/orchestra-tv.pid; tail -20 /tmp/orchestra-tv.log'`; print it.
 13. Verify the log contains `ssap registered` and (`cast connected` or `DRY_RUN`). If not, print a warning and the log tail; exit 2.
 14. Save the installer-side `config.json` with `tvHost`, `sshUser`, `castHost`, `castPort`, `gain`, `desiredOutput`, `watchdogSeconds` (gitignored) for reruns.
@@ -230,7 +230,7 @@ Behavior:
 - Resolve TV IP from flag or local `config.json`.
 - SSH check as in install.
 - Stop daemon: read `/tmp/orchestra-tv.pid` and kill; then `ps | grep` fallback to kill leftover `orchestra.js`.
-- Remove `/var/lib/webosbrew/init.d/98-orchestra-daemon.sh` and `99-orchestra.sh`.
+- Remove `/var/lib/webosbrew/init.d/98-orchestra-daemon` and `99-orchestra`.
 - Restore output through `script -qc` if `MODE != none`; verify with `getSoundOutput` and print the result.
 - Remove `/var/lib/webosbrew/orchestra` (or keep only `config.json` with `--keep-config`).
 - With `--purge`, remove local `secrets/` and `config.json`.

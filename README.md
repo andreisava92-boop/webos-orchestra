@@ -67,7 +67,7 @@ After a successful install the script prints the daemon PID and the tail of
 1. Copy `tv/orchestra.js` and the three config/secret files to
    `/var/lib/webosbrew/orchestra/` on the TV (`config.json`, `client.key`,
    `registration.json`).
-2. Copy `tv/init.d/98-orchestra-daemon.sh` and `tv/init.d/99-orchestra.sh` to
+2. Copy `tv/init.d/98-orchestra-daemon` and `tv/init.d/99-orchestra` to
    `/var/lib/webosbrew/init.d/` and make them executable (`chmod 755`).
 3. Create `/var/lib/webosbrew/orchestra/config.json`:
 
@@ -81,7 +81,7 @@ After a successful install the script prints the daemon PID and the tail of
    }
    ```
 
-4. Start it: `sh /var/lib/webosbrew/init.d/98-orchestra-daemon.sh` and watch
+4. Start it: `sh /var/lib/webosbrew/init.d/98-orchestra-daemon` and watch
    `/tmp/orchestra-tv.log`.
 
 To check a config without starting anything, run the daemon once:
@@ -113,7 +113,7 @@ above ~38) sends level 100. If the soundbar is much louder or quieter than the T
 speakers, adjust `gain` and restart the daemon:
 
 ```bash
-ssh root@192.0.2.10 'sh /var/lib/webosbrew/init.d/98-orchestra-daemon.sh'
+ssh root@192.0.2.10 'sh /var/lib/webosbrew/init.d/98-orchestra-daemon'
 ```
 
 ## Finding the soundbar IP
