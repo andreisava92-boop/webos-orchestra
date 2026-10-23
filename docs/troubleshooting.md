@@ -9,6 +9,8 @@ ssh root@192.0.2.10 'tail -30 /tmp/orchestra-tv.log'
 
 `status.sh` prints the PID, the running `orchestra.js` process, the last ten log lines,
 the current `soundOutput` and the sound settings. It exits `0` when the daemon runs.
+The settings service can still report `soundOutput=external_arc` while the hidden combined
+mode is active; the Luna `soundOutput` line is the authoritative one.
 
 ## SSH fails
 

@@ -104,6 +104,8 @@ echo "--- sound settings ---"
 SETTINGS_PAYLOAD='{"category":"sound","keys":["soundOutput","avSync","avSyncSpeaker","avSyncSpdif","lgSoundSync","soundModeSync","soundAlive"]}'
 luna 'luna://com.webos.settingsservice/getSystemSettings' "$SETTINGS_PAYLOAD" 2>/dev/null || true
 echo
+echo "note: the settings service may still report soundOutput=external_arc while the hidden"
+echo "      combined mode is active; the Luna soundOutput value above is authoritative."
 
 RUNNING="$(ssh_run 'ps -ef | grep -c "[o]rchestra.js"' 2>/dev/null || true)"
 if [ "${RUNNING:-0}" -gt 0 ]; then
