@@ -1,9 +1,11 @@
 #!/bin/sh
-# Re-apply the dual-output audio mode after boot.
+# Re-apply the configured audio output mode after boot.
 #
-# The hidden mode tv_speaker_optical_arc makes the TV speakers and the HDMI eARC
-# / optical output play at the same time. webOS may reset it during boot, so it is
-# re-applied here, after the audio service is ready.
+# The default is the hidden mode tv_speaker_optical_arc, which makes the TV
+# speakers and the HDMI eARC / optical output play at the same time. The mode
+# actually applied is the one stored in config.json (desiredOutput), so a
+# selection made in the AV Sync GUI survives a reboot. webOS may reset the
+# output during boot, so it is re-applied here, after the audio service is ready.
 #
 # luna-send talks to Luna over a local socket and writes nothing when it has no
 # controlling terminal, so every call is wrapped in `script -qc "..."`, which
@@ -11,7 +13,14 @@
 # so it survives both shell layers.
 PATH=/usr/bin:/bin:/usr/sbin:/sbin
 
+BASE=/var/lib/webosbrew/orchestra
 DESIRED_OUTPUT=tv_speaker_optical_arc
+if [ -f "$BASE/config.json" ]; then
+  CONFIGURED_OUTPUT="$(sed -n 's/.*"desiredOutput"[[:space:]]*:[[:space:]]*"\([A-Za-z0-9_]*\)".*/\1/p' "$BASE/config.json" | head -n 1)"
+  if [ -n "$CONFIGURED_OUTPUT" ]; then
+    DESIRED_OUTPUT="$CONFIGURED_OUTPUT"
+  fi
+fi
 
 # Wait for Luna audio to answer (up to 15 attempts, 2 seconds apart).
 i=0
