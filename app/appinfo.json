@@ -1,0 +1,12 @@
+{
+  "id": "com.andrei.orchestra",
+  "version": "1.0.0",
+  "vendor": "Andrei",
+  "type": "web",
+  "main": "index.html",
+  "title": "Orchestra",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "iconColor": "#7dd3fc",
+  "appDescription": "Choose which speakers play: the TV, the soundbar, or both."
+}

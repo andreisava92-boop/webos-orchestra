@@ -271,4 +271,65 @@ test('loadConfig rejects invalid JSON', function () {
   assert.throws(function () { orchestra.loadConfig(file); }, /JSON/);
 });
 
+// ---------- output api ----------
+
+test('validOutput accepts the three supported modes', function () {
+  ['tv_speaker', 'external_arc', 'tv_speaker_optical_arc'].forEach(function (v) {
+    assert.strictEqual(orchestra.validOutput(v), true);
+  });
+});
+
+test('validOutput rejects unknown values', function () {
+  ['', 'external_optical', 'tv_speaker; id', null, 42].forEach(function (v) {
+    assert.strictEqual(orchestra.validOutput(v), false);
+  });
+});
+
+test('validAvSync accepts 0..60 integers', function () {
+  [0, 15, 60, '20'].forEach(function (v) {
+    assert.strictEqual(orchestra.validAvSync(v), true);
+  });
+});
+
+test('validAvSync rejects out-of-range and non-integers', function () {
+  [-1, 61, 1.5, 'x', null, '', true].forEach(function (v) {
+    assert.strictEqual(orchestra.validAvSync(v), false);
+  });
+});
+
+test('readAvSync reads settings.avSyncSpeaker', function () {
+  assert.strictEqual(orchestra.readAvSync({ settings: { avSyncSpeaker: '15' } }), 15);
+  assert.strictEqual(orchestra.readAvSync({ settings: { avSyncSpeaker: 0 } }), 0);
+});
+
+test('readAvSync returns null when missing', function () {
+  assert.strictEqual(orchestra.readAvSync({}), null);
+  assert.strictEqual(orchestra.readAvSync(null), null);
+  assert.strictEqual(orchestra.readAvSync({ settings: {} }), null);
+});
+
+test('loadConfig defaults apiPort to 8099', function () {
+  var file = tmpFile('config.json', JSON.stringify({
+    castHost: '192.0.2.60', castPort: 8009, gain: 2.6,
+    desiredOutput: 'tv_speaker_optical_arc', watchdogSeconds: 15
+  }));
+  assert.strictEqual(orchestra.loadConfig(file).apiPort, 8099);
+});
+
+test('loadConfig accepts apiPort 0 (disabled)', function () {
+  var file = tmpFile('config.json', JSON.stringify({
+    castHost: '192.0.2.60', castPort: 8009, gain: 2.6,
+    desiredOutput: 'tv_speaker_optical_arc', watchdogSeconds: 15, apiPort: 0
+  }));
+  assert.strictEqual(orchestra.loadConfig(file).apiPort, 0);
+});
+
+test('loadConfig rejects a bad apiPort', function () {
+  var file = tmpFile('config.json', JSON.stringify({
+    castHost: '192.0.2.60', castPort: 8009, gain: 2.6,
+    desiredOutput: 'tv_speaker_optical_arc', watchdogSeconds: 15, apiPort: 70000
+  }));
+  assert.throws(function () { orchestra.loadConfig(file); }, /apiPort/);
+});
+
 console.log('OK ' + passed + ' tests');

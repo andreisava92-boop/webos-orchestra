@@ -60,6 +60,45 @@ After a successful install the script prints the daemon PID and the tail of
 `/tmp/orchestra-tv.log`, and checks that the log contains `ssap registered` and
 `cast connected`.
 
+## TV app (Orchestra)
+
+The optional app adds a launcher icon and a screen on the TV itself, so the
+speakers can be switched with the remote — no phone or laptop needed:
+
+- **Doar TV** — `tv_speaker`
+- **Doar soundbar** — `external_arc`
+- **TV + soundbar** — `tv_speaker_optical_arc` (the hidden dual mode)
+
+It also adjusts `avSyncSpeaker` in 5 ms steps. The app never calls Luna itself:
+it talks to the daemon's local API on `127.0.0.1:8099` (HTTP, loopback only),
+and the daemon (running as root) applies the change, saves `desiredOutput` in
+`config.json` and restores the AV Sync value if the switch reset it.
+
+Build and install it after `install.sh` has set up the daemon:
+
+```bash
+npm install --no-save @webosose/ares-cli   # provides ares-package
+export PATH="$PWD/node_modules/.bin:$PATH"
+./scripts/build-app.sh
+./scripts/install-app.sh --tv-ip 192.0.2.10
+```
+
+The app appears in the launcher as **Orchestra**. It needs `apiPort` to be non-zero
+(the default, `8099`). The daemon API is loopback-only; nothing new is exposed to the
+LAN.
+
+### Local API
+
+| Method | Path      | Body                     | Meaning                                   |
+| ------ | --------- | ------------------------ | ----------------------------------------- |
+| GET    | `/health` | —                        | `{"ok":true,"uptime":N}`                  |
+| GET    | `/state`  | —                        | current output, desired output, AV Sync, volume |
+| POST   | `/output` | `{"value":"external_arc"}` | switch speakers and persist the choice   |
+| POST   | `/avsync` | `{"value":15}`           | set `avSyncSpeaker` (0–60)                |
+
+From the TV shell: `curl http://127.0.0.1:8099/state`. From the laptop, over SSH:
+`ssh root@192.0.2.10 'curl -s http://127.0.0.1:8099/state'`.
+
 ## Manual install
 
 `install.sh` performs these steps; you can do them by hand if you prefer:
@@ -103,6 +142,7 @@ The TV-side file is `/var/lib/webosbrew/orchestra/config.json`:
 | `fixedCastVolume` | number or null | Pin the soundbar at this level instead of using `gain`. |
 | `desiredOutput`   | string | Output mode to enforce, normally `tv_speaker_optical_arc`.     |
 | `watchdogSeconds` | number | How often the output mode is checked, minimum `5`.             |
+| `apiPort`         | number | Local HTTP API port for the TV app, default `8099`; `0` disables it. |
 
 The installer-side `config.json` in the repository root also stores `tvHost` and
 `sshUser` so `install.sh`, `status.sh` and `uninstall.sh` can be re-run without flags.

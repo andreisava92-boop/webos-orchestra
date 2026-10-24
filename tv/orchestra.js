@@ -13,6 +13,8 @@ var net = require('net');
 var tls = require('tls');
 var crypto = require('crypto');
 var fs = require('fs');
+var http = require('http');
+var urllib = require('url');
 var exec = require('child_process').exec;
 
 var BASE = '/var/lib/webosbrew/orchestra';
@@ -39,6 +41,9 @@ var castSocket = null;
 var castReady = false;
 var pendingLevel = null;
 var requestId = 1;
+var lastTvVolume = null;
+var lastTvMuted = false;
+var apiServer = null;
 
 function log(message) {
   console.log(new Date().toISOString() + ' ' + message);
@@ -95,13 +100,21 @@ function loadConfig(path) {
   if (typeof watchdog !== 'number' || !isFinite(watchdog) || watchdog < 5) {
     throw new Error('config.watchdogSeconds must be a number >= 5');
   }
+  var apiPort = parsed.apiPort;
+  if (apiPort === undefined || apiPort === null) {
+    apiPort = 8099;
+  } else if (typeof apiPort !== 'number' || !isFinite(apiPort) || Math.floor(apiPort) !== apiPort ||
+      apiPort < 0 || apiPort > 65535) {
+    throw new Error('config.apiPort must be an integer between 0 and 65535 (0 disables the local API)');
+  }
   return {
     castHost: parsed.castHost.trim(),
     castPort: port,
     gain: gain,
     fixedCastVolume: fixed,
     desiredOutput: desired,
-    watchdogSeconds: watchdog
+    watchdogSeconds: watchdog,
+    apiPort: apiPort
   };
 }
 
@@ -113,6 +126,229 @@ function applyGain(volume, gain) {
   if (!isFinite(v)) return 0;
   if (!isFinite(g) || g <= 0) g = 1;
   return Math.min(100, Math.round(v * g));
+}
+
+// ---------- output + local API ----------
+
+var OUTPUT_VALUES = ['tv_speaker', 'external_arc', 'tv_speaker_optical_arc'];
+
+function validOutput(value) {
+  return typeof value === 'string' && OUTPUT_VALUES.indexOf(value) !== -1;
+}
+
+function validAvSync(value) {
+  if (value === null || value === undefined || value === '' || typeof value === 'boolean') return false;
+  var n = Number(value);
+  return isFinite(n) && Math.floor(n) === n && n >= 0 && n <= 60;
+}
+
+function readAvSync(data) {
+  if (!data || !data.settings) return null;
+  var n = Number(data.settings.avSyncSpeaker);
+  return isFinite(n) ? n : null;
+}
+
+// Update desiredOutput in config.json without touching the other fields. The
+// daemon keeps the new value in memory, so the watchdog applies it at once and
+// no restart is needed.
+function saveConfigOutput(value, cb) {
+  var raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+  } catch (e) {
+    return cb(e);
+  }
+  raw.desiredOutput = value;
+  var tmp = CONFIG_PATH + '.tmp';
+  try {
+    fs.writeFileSync(tmp, JSON.stringify(raw, null, 2) + '\n');
+    fs.renameSync(tmp, CONFIG_PATH);
+  } catch (e2) {
+    try { fs.unlinkSync(tmp); } catch (e3) {}
+    return cb(e2);
+  }
+  cb(null);
+}
+
+function getSoundOutput(cb) {
+  runLuna('luna://com.webos.service.audio/getSoundOutput', '{}', function (err, data) {
+    if (err) return cb(err);
+    if (!data || !data.soundOutput) return cb(new Error('no soundOutput in the response'));
+    cb(null, data.soundOutput);
+  });
+}
+
+function getSoundSettings(cb) {
+  runLuna('luna://com.webos.settingsservice/getSystemSettings', '{"category":"sound"}', cb);
+}
+
+function setAvSync(value, cb) {
+  runLuna('luna://com.webos.settingsservice/setSystemSettings',
+    JSON.stringify({ category: 'sound', settings: { avSyncSpeaker: String(value) } }), cb);
+}
+
+function getState(cb) {
+  getSoundOutput(function (err, output) {
+    if (err) return cb(err);
+    getSoundSettings(function (err2, settings) {
+      cb(null, {
+        soundOutput: output,
+        desiredOutput: config.desiredOutput,
+        avSyncSpeaker: readAvSync(settings),
+        tvVolume: lastTvVolume,
+        tvMuted: lastTvMuted
+      });
+    });
+  });
+}
+
+function applyOutput(value, cb) {
+  if (!validOutput(value)) return cb(new Error('invalid output value'));
+  getSoundSettings(function (err, before) {
+    var syncBefore = err ? null : readAvSync(before);
+    runLuna('luna://com.webos.service.audio/setSoundOutput',
+      JSON.stringify({ soundOutput: value }), function (err2, result) {
+        if (err2) return cb(err2);
+        if (result && result.returnValue === false) {
+          return cb(new Error('setSoundOutput refused the value'));
+        }
+        config.desiredOutput = value;
+        saveConfigOutput(value, function (err3) {
+          if (err3) log('cannot save config: ' + err3.message);
+          setTimeout(function () {
+            getSoundOutput(function (err4, output) {
+              if (err4) return cb(err4);
+              getSoundSettings(function (err5, after) {
+                var syncAfter = err5 ? null : readAvSync(after);
+                var finish = function (restored) {
+                  cb(null, {
+                    soundOutput: output,
+                    desiredOutput: config.desiredOutput,
+                    avSyncSpeaker: restored === null ? syncAfter : restored,
+                    avSyncRestored: restored !== null,
+                    configSaved: !err3
+                  });
+                };
+                if (syncBefore === null || syncAfter === null || syncBefore === syncAfter) {
+                  return finish(null);
+                }
+                setAvSync(syncBefore, function () { finish(syncBefore); });
+              });
+            });
+          }, 700);
+        });
+      });
+  });
+}
+
+function sendJson(res, status, obj) {
+  var body = obj === null ? '' : JSON.stringify(obj);
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': Buffer.byteLength(body),
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  });
+  res.end(body);
+}
+
+function readBody(req, res, cb) {
+  var chunks = [];
+  var size = 0;
+  var finished = false;
+  req.on('data', function (chunk) {
+    if (finished) return;
+    size += chunk.length;
+    if (size > 4096) {
+      finished = true;
+      sendJson(res, 413, { ok: false, error: 'body too large' });
+      req.destroy();
+      return;
+    }
+    chunks.push(chunk);
+  });
+  req.on('end', function () {
+    if (finished) return;
+    finished = true;
+    var raw = Buffer.concat(chunks).toString('utf8');
+    if (!raw) return cb({});
+    var parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: 'invalid JSON' });
+    }
+    cb(parsed);
+  });
+}
+
+function handleApi(req, res) {
+  var parsed = urllib.parse(req.url, true);
+  var path = parsed.pathname;
+
+  if (req.method === 'OPTIONS') return sendJson(res, 204, null);
+  if (req.method === 'GET' && (path === '/' || path === '/health')) {
+    return sendJson(res, 200, { ok: true, uptime: Math.round(process.uptime()) });
+  }
+  if (req.method === 'GET' && path === '/state') {
+    return getState(function (err, state) {
+      if (err) return sendJson(res, 502, { ok: false, error: err.message });
+      state.ok = true;
+      sendJson(res, 200, state);
+    });
+  }
+  if (req.method === 'POST' && path === '/output') {
+    return readBody(req, res, function (body) {
+      var value = body && body.value;
+      if (!validOutput(value)) {
+        return sendJson(res, 400, { ok: false, error: 'invalid output value' });
+      }
+      applyOutput(value, function (err, result) {
+        if (err) return sendJson(res, 502, { ok: false, error: err.message });
+        result.ok = true;
+        sendJson(res, 200, result);
+      });
+    });
+  }
+  if (req.method === 'POST' && path === '/avsync') {
+    return readBody(req, res, function (body) {
+      var value = body && body.value;
+      if (!validAvSync(value)) {
+        return sendJson(res, 400, { ok: false, error: 'avSyncSpeaker must be an integer between 0 and 60' });
+      }
+      setAvSync(value, function (err, data) {
+        if (err) return sendJson(res, 502, { ok: false, error: err.message });
+        if (data && data.returnValue === false) {
+          return sendJson(res, 502, { ok: false, error: 'the TV refused avSyncSpeaker' });
+        }
+        sendJson(res, 200, { ok: true, avSyncSpeaker: Number(value) });
+      });
+    });
+  }
+  sendJson(res, 404, { ok: false, error: 'not found' });
+}
+
+function startApi() {
+  if (!config.apiPort) {
+    log('api disabled (apiPort 0)');
+    return;
+  }
+  apiServer = http.createServer(function (req, res) {
+    try {
+      handleApi(req, res);
+    } catch (e) {
+      log('api error: ' + (e && e.stack ? e.stack : e));
+      try { sendJson(res, 500, { ok: false, error: 'internal error' }); } catch (e2) {}
+    }
+  });
+  apiServer.on('error', function (e) {
+    log('api server error: ' + e.message);
+  });
+  apiServer.listen(config.apiPort, '127.0.0.1', function () {
+    log('api listening on 127.0.0.1:' + config.apiPort);
+  });
 }
 
 function computeTarget(volume, muted, gain, fixedCastVolume) {
@@ -372,6 +608,8 @@ function handleVolume(vs) {
   var vol = Number(vs.volume);
   var muted = !!vs.muteStatus;
   if (isNaN(vol)) return;
+  lastTvVolume = vol;
+  lastTvMuted = muted;
   var target = computeTarget(vol, muted, config.gain, config.fixedCastVolume);
   if (target === lastTarget) return;
   lastTarget = target;
@@ -468,10 +706,12 @@ function start() {
     ' fixed=' + (config.fixedCastVolume === null ? 'off' : config.fixedCastVolume + '%') +
     ' output=' + config.desiredOutput +
     ' watchdog=' + config.watchdogSeconds + 's' +
+    ' apiPort=' + config.apiPort +
     (dryRun ? ' (dry run)' : ''));
 
   connectCast();
   wsConnect();
+  startApi();
   setInterval(checkOutput, config.watchdogSeconds * 1000);
 }
 
@@ -493,5 +733,9 @@ module.exports = {
   encodeFrame: encodeFrame,
   loadConfig: loadConfig,
   computeTarget: computeTarget,
-  applyGain: applyGain
+  applyGain: applyGain,
+  validOutput: validOutput,
+  validAvSync: validAvSync,
+  readAvSync: readAvSync,
+  OUTPUT_VALUES: OUTPUT_VALUES
 };
