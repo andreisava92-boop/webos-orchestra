@@ -106,6 +106,10 @@ PCM**, so selecting `tv_speaker_optical_arc` switches `soundOutputDigital` back 
 what sends Dolby/DTS to the soundbar. The app shows the current format and warns when
 pass-through is selected while dual output is active.
 
+LG's own manuals list `Optical Out Device + TV Speaker` and `HDMI(ARC) Device + TV
+Speaker` as **stereo PCM** modes; no setting or service-menu value sends Dolby/DTS to
+ARC while the internal speakers play. For surround, use Soundbar only.
+
 From the TV shell: `curl http://127.0.0.1:8099/state`. From the laptop, over SSH:
 `ssh root@192.0.2.10 'curl -s http://127.0.0.1:8099/state'`.
 

@@ -73,7 +73,8 @@ Alternative, without Homebrew Channel: download the IPK from the
 The TV cannot send bitstream to ARC and PCM to its own speakers at the same time.
 Selecting **Soundbar only** from `auto` switches Digital audio to `passThrough`;
 selecting **TV + soundbar** switches it back to `auto`, because dual output ignores
-pass-through and plays PCM.
+pass-through and plays PCM. LG documents these simultaneous modes as **stereo PCM**;
+there is no software setting that changes that.
 
 ## Troubleshooting
 
