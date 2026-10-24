@@ -85,6 +85,11 @@
     font-size: 21px;
     line-height: 1.4;
   }
+  .banner.info {
+    border-color: rgba(125, 211, 252, .35);
+    background: rgba(125, 211, 252, .09);
+    color: var(--accent);
+  }
 
   main { display: flex; flex-direction: column; gap: 40px; margin-top: 34px; }
   .cards { display: flex; gap: 30px; }
@@ -163,6 +168,35 @@
   }
   .name { font-size: 28px; font-weight: 650; }
   .avsync-control { display: flex; align-items: center; gap: 18px; }
+
+  .digital {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    padding: 20px 34px;
+    border: 2px solid var(--line);
+    border-radius: 26px;
+    background: rgba(255, 255, 255, .04);
+  }
+  .digital-label { display: flex; flex-direction: column; gap: 4px; }
+  .digital .hint { color: var(--muted); font-size: 18px; }
+  .seg { display: flex; gap: 14px; }
+  .seg-option {
+    padding: 14px 28px;
+    border: 2px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .05);
+    color: var(--text);
+    font: inherit;
+    font-size: 23px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .seg-option.active { border-color: rgba(125, 211, 252, .55); background: rgba(125, 211, 252, .16); }
+  .seg-option.focused { border-color: var(--accent); background: rgba(125, 211, 252, .28); }
+  .seg-option:disabled { opacity: .55; cursor: wait; }
+
   .step {
     width: 78px;
     height: 78px;
@@ -244,9 +278,22 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="12" height="9.5" rx="2"/><path d="M5.5 17h4"/><rect x="15.5" y="8" width="5" height="12" rx="1.6"/><circle cx="18" cy="11.5" r="1.1"/><path d="M13.8 10.5h1.7"/></svg>
         </span>
         <span class="title">TV + soundbar</span>
-        <span class="hint">Both at the same time</span>
+        <span class="hint">Both at once · PCM only</span>
         <span class="check" aria-hidden="true"></span>
       </button>
+    </section>
+
+    <section class="digital" aria-label="Digital audio">
+      <div class="digital-label">
+        <span class="kicker">Digital audio</span>
+        <span class="name">HDMI ARC format</span>
+        <span class="hint">Pass Through sends Dolby/DTS (soundbar only)</span>
+      </div>
+      <div class="seg" id="digital-options" role="radiogroup" aria-label="Digital audio">
+        <button class="seg-option" type="button" data-value="auto">Auto</button>
+        <button class="seg-option" type="button" data-value="pcm">PCM</button>
+        <button class="seg-option" type="button" data-value="passThrough">Pass Through</button>
+      </div>
     </section>
 
     <section class="avsync" aria-label="AV sync">

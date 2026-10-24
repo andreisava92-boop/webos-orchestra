@@ -1,0 +1,15 @@
+{
+  "id": "com.andrei.orchestra",
+  "version": "1.0.0",
+  "type": "web",
+  "title": "Orchestra",
+  "appDescription": "Choose which speakers play: the TV, the soundbar, or both. Adjust the AV sync delay.",
+  "iconUri": "https://raw.githubusercontent.com/andreisava92-boop/webos-orchestra/main/app/largeIcon.png",
+  "sourceUrl": "https://github.com/andreisava92-boop/webos-orchestra",
+  "rootRequired": true,
+  "ipkUrl": "https://github.com/andreisava92-boop/webos-orchestra/releases/download/v1.0.0/com.andrei.orchestra_1.0.0_all.ipk",
+  "ipkHash": {
+    "sha256": "1869438deac571c8f89ec10a8d014ce90a0b6ae4f0c183346575184a625c847a"
+  },
+  "ipkSize": 22420
+}

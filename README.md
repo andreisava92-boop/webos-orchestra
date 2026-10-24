@@ -16,6 +16,9 @@ webos-orchestra installs a tiny daemon on the TV that:
 
 No computer has to stay on, and nothing has to run on your phone.
 
+> **Installing on a new TV?** See [INSTALL.md](INSTALL.md) for the full path: rooting
+> prerequisites, the daemon over SSH, and the app through Homebrew Channel.
+
 ## How it works in one paragraph
 
 The daemon runs on the TV itself (webOS ships a Node.js runtime). It talks SSAP over a
@@ -95,6 +98,13 @@ LAN.
 | GET    | `/state`  | —                        | current output, desired output, AV Sync, volume |
 | POST   | `/output` | `{"value":"external_arc"}` | switch speakers and persist the choice   |
 | POST   | `/avsync` | `{"value":15}`           | set `avSyncSpeaker` (0–60)                |
+| POST   | `/digital` | `{"value":"passThrough"}` | set `soundOutputDigital` (`auto`, `pcm`, `passThrough`) |
+
+Digital audio and the output mode are linked: **dual output is always downmixed to
+PCM**, so selecting `tv_speaker_optical_arc` switches `soundOutputDigital` back to
+`auto`. Selecting `external_arc` from `auto` switches it to `passThrough`, which is
+what sends Dolby/DTS to the soundbar. The app shows the current format and warns when
+pass-through is selected while dual output is active.
 
 From the TV shell: `curl http://127.0.0.1:8099/state`. From the laptop, over SSH:
 `ssh root@192.0.2.10 'curl -s http://127.0.0.1:8099/state'`.

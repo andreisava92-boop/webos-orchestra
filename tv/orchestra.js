@@ -148,6 +148,28 @@ function readAvSync(data) {
   return isFinite(n) ? n : null;
 }
 
+// Digital audio out. On this platform "auto" and "pcm" both decode, while
+// "passThrough" sends the original bitstream to HDMI ARC. Dual output
+// (TV + soundbar) is downmixed to PCM regardless, so passThrough only makes
+// sense in soundbar-only mode.
+var DIGITAL_VALUES = ['auto', 'pcm', 'passThrough'];
+
+function validDigital(value) {
+  return typeof value === 'string' && DIGITAL_VALUES.indexOf(value) !== -1;
+}
+
+function readDigital(data) {
+  if (!data || !data.settings) return null;
+  var value = data.settings.soundOutputDigital;
+  return typeof value === 'string' ? value : null;
+}
+
+function setDigital(value, cb) {
+  if (!validDigital(value)) return cb(new Error('invalid digital audio value'));
+  runLuna('luna://com.webos.settingsservice/setSystemSettings',
+    JSON.stringify({ category: 'sound', settings: { soundOutputDigital: value } }), cb);
+}
+
 // Update desiredOutput in config.json without touching the other fields. The
 // daemon keeps the new value in memory, so the watchdog applies it at once and
 // no restart is needed.
@@ -195,6 +217,7 @@ function getState(cb) {
         soundOutput: output,
         desiredOutput: config.desiredOutput,
         avSyncSpeaker: readAvSync(settings),
+        soundOutputDigital: readDigital(settings),
         tvVolume: lastTvVolume,
         tvMuted: lastTvMuted
       });
@@ -206,6 +229,7 @@ function applyOutput(value, cb) {
   if (!validOutput(value)) return cb(new Error('invalid output value'));
   getSoundSettings(function (err, before) {
     var syncBefore = err ? null : readAvSync(before);
+    var digitalBefore = err ? null : readDigital(before);
     runLuna('luna://com.webos.service.audio/setSoundOutput',
       JSON.stringify({ soundOutput: value }), function (err2, result) {
         if (err2) return cb(err2);
@@ -220,19 +244,37 @@ function applyOutput(value, cb) {
               if (err4) return cb(err4);
               getSoundSettings(function (err5, after) {
                 var syncAfter = err5 ? null : readAvSync(after);
-                var finish = function (restored) {
+                var digitalAfter = err5 ? null : readDigital(after);
+                var finish = function (restored, digitalChanged) {
                   cb(null, {
                     soundOutput: output,
                     desiredOutput: config.desiredOutput,
                     avSyncSpeaker: restored === null ? syncAfter : restored,
                     avSyncRestored: restored !== null,
+                    soundOutputDigital: digitalAfter,
+                    digitalChanged: !!digitalChanged,
                     configSaved: !err3
                   });
                 };
-                if (syncBefore === null || syncAfter === null || syncBefore === syncAfter) {
-                  return finish(null);
+                var afterDigital = function (changed) {
+                  if (syncBefore === null || syncAfter === null || syncBefore === syncAfter) {
+                    return finish(null, changed);
+                  }
+                  setAvSync(syncBefore, function () { finish(syncBefore, changed); });
+                };
+                // Keep the format in step with the output: dual is always PCM, while
+                // soundbar-only sounds best with the original bitstream.
+                var wanted = null;
+                if (value === 'tv_speaker_optical_arc' && digitalBefore === 'passThrough') wanted = 'auto';
+                else if (value === 'external_arc' && digitalBefore === 'auto') wanted = 'passThrough';
+                if (wanted) {
+                  return setDigital(wanted, function (err6) {
+                    if (err6) log('cannot set digital audio: ' + err6.message);
+                    else digitalAfter = wanted;
+                    afterDigital(!err6);
+                  });
                 }
-                setAvSync(syncBefore, function () { finish(syncBefore); });
+                afterDigital(false);
               });
             });
           }, 700);
@@ -324,6 +366,25 @@ function handleApi(req, res) {
           return sendJson(res, 502, { ok: false, error: 'the TV refused avSyncSpeaker' });
         }
         sendJson(res, 200, { ok: true, avSyncSpeaker: Number(value) });
+      });
+    });
+  }
+  if (req.method === 'POST' && path === '/digital') {
+    return readBody(req, res, function (body) {
+      var value = body && body.value;
+      if (!validDigital(value)) {
+        return sendJson(res, 400, { ok: false, error: 'digital audio must be auto, pcm or passThrough' });
+      }
+      setDigital(value, function (err, data) {
+        if (err) return sendJson(res, 502, { ok: false, error: err.message });
+        if (data && data.returnValue === false) {
+          return sendJson(res, 502, { ok: false, error: 'the TV refused soundOutputDigital' });
+        }
+        var warning = null;
+        if (value === 'passThrough' && config.desiredOutput === 'tv_speaker_optical_arc') {
+          warning = 'dual output is downmixed to PCM; use Soundbar only for Dolby';
+        }
+        sendJson(res, 200, { ok: true, soundOutputDigital: value, warning: warning });
       });
     });
   }
@@ -737,5 +798,8 @@ module.exports = {
   validOutput: validOutput,
   validAvSync: validAvSync,
   readAvSync: readAvSync,
-  OUTPUT_VALUES: OUTPUT_VALUES
+  validDigital: validDigital,
+  readDigital: readDigital,
+  OUTPUT_VALUES: OUTPUT_VALUES,
+  DIGITAL_VALUES: DIGITAL_VALUES
 };

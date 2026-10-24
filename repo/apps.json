@@ -1,0 +1,39 @@
+{
+  "paging": {
+    "page": 1,
+    "count": 1,
+    "maxPage": 1,
+    "itemsTotal": 1,
+    "prevUrl": null,
+    "nextUrl": null
+  },
+  "packages": [
+    {
+      "id": "com.andrei.orchestra",
+      "title": "Orchestra",
+      "iconUri": "https://raw.githubusercontent.com/andreisava92-boop/webos-orchestra/main/app/largeIcon.png",
+      "manifestUrl": "https://raw.githubusercontent.com/andreisava92-boop/webos-orchestra/main/repo/manifest.json",
+      "manifest": {
+        "id": "com.andrei.orchestra",
+        "version": "1.0.0",
+        "type": "web",
+        "title": "Orchestra",
+        "appDescription": "Choose which speakers play: the TV, the soundbar, or both. Adjust the AV sync delay.",
+        "iconUri": "https://raw.githubusercontent.com/andreisava92-boop/webos-orchestra/main/app/largeIcon.png",
+        "sourceUrl": "https://github.com/andreisava92-boop/webos-orchestra",
+        "rootRequired": true,
+        "ipkUrl": "https://github.com/andreisava92-boop/webos-orchestra/releases/download/v1.0.0/com.andrei.orchestra_1.0.0_all.ipk",
+        "ipkHash": {
+          "sha256": "1869438deac571c8f89ec10a8d014ce90a0b6ae4f0c183346575184a625c847a"
+        },
+        "ipkSize": 22420
+      },
+      "pool": "main",
+      "requirements": {
+        "webosRelease": ">=6.0"
+      },
+      "shortDescription": "Switch between the TV speakers, an HDMI ARC soundbar, or both, and adjust the AV sync delay.",
+      "fullDescriptionUrl": "https://github.com/andreisava92-boop/webos-orchestra/blob/main/INSTALL.md"
+    }
+  ]
+}

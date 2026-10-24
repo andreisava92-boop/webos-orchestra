@@ -308,6 +308,29 @@ test('readAvSync returns null when missing', function () {
   assert.strictEqual(orchestra.readAvSync({ settings: {} }), null);
 });
 
+test('validDigital accepts auto, pcm and passThrough', function () {
+  ['auto', 'pcm', 'passThrough'].forEach(function (v) {
+    assert.strictEqual(orchestra.validDigital(v), true);
+  });
+});
+
+test('validDigital rejects unknown values', function () {
+  ['', 'bitstream', 'dolbyDigital', null, 0].forEach(function (v) {
+    assert.strictEqual(orchestra.validDigital(v), false);
+  });
+});
+
+test('readDigital reads settings.soundOutputDigital', function () {
+  assert.strictEqual(orchestra.readDigital({ settings: { soundOutputDigital: 'passThrough' } }), 'passThrough');
+  assert.strictEqual(orchestra.readDigital({ settings: { soundOutputDigital: 'auto' } }), 'auto');
+});
+
+test('readDigital returns null when missing', function () {
+  assert.strictEqual(orchestra.readDigital({}), null);
+  assert.strictEqual(orchestra.readDigital(null), null);
+  assert.strictEqual(orchestra.readDigital({ settings: {} }), null);
+});
+
 test('loadConfig defaults apiPort to 8099', function () {
   var file = tmpFile('config.json', JSON.stringify({
     castHost: '192.0.2.60', castPort: 8009, gain: 2.6,
